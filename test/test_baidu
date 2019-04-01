@@ -1,0 +1,55 @@
+# -*- coding:utf-8 -*-
+''''#os.path.dirname(__file__)返回的是.py文件的目录
+base_path = os.path.dirname(os.path.abspath(__file__)) + "\.."
+#os.path.abspath(__file__)返回的是.py文件的绝对路径（完整路径）
+driver_path = os.path.abspath(os.path.dirname(base_path + '\drivers\chromedriver.exe'))'''
+
+import os
+import time
+import unittest
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from 豆瓣.test_douban.utils.config import Config,DRIVER_PATH,DATA_PATH
+from 豆瓣.test_douban.utils.log import logger
+from 豆瓣.test_douban.utils.file_reader import ExcelReader
+
+class TestBaiDu(unittest.TestCase):
+    URL = Config().get("URL")
+    excel = DATA_PATH + '/baidu.xlsx'
+
+    locator_kw = (By.ID, 'kw')
+    locator_su = (By.ID, 'su')
+    locator_result = (By.XPATH, '//div[contains(@class, "result")]/h3/a')
+
+    def setUp(self):
+        self.driver = webdriver.Firefox(executable_path=DRIVER_PATH + '\geckodriver.exe')
+        self.driver.get(self.URL)
+
+    def tearDown(self):
+        self.driver.quit()
+
+    def test_search(self):
+        datas = ExcelReader(self.excel).data
+        for d in datas:
+            with self.subTest(data=d):
+                self.sub_setUp()
+                self.driver.find_element(*self.locator_kw).send_keys(d['search'])
+                self.driver.find_element(*self.locator_su).click()
+                time.sleep(2)
+                links = self.driver.find_elements(*self.locator_result)
+                for link in links:
+                    logger.info(link.text)
+                self.sub_tearDown()
+
+    '''def test_search_1(self):
+        self.driver.find_element(*self.locator_kw).send_keys('Python selenium')
+        self.driver.find_element(*self.locator_su).click()
+        time.sleep(2)
+        links = self.driver.find_elements(*self.locator_result)
+        for link in links:
+            logger.info(link.text)'''
+
+
+if __name__ == '__main__':
+    '''verbosity用于表示测试结果的信息复杂度，verbosity=2表示详细信息，测试结果会显示每个测试用例的所有相关的信息。'''
+    unittest.main(verbosity=2)
